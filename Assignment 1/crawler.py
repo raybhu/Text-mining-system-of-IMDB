@@ -4,13 +4,6 @@ import platform
 from bs4 import BeautifulSoup
 
 
-class Movie(object):
-    def __init__(self, movieName, storyLine, link):
-        self.movieName = movieName
-        self.storyLine = storyLine
-        self.link = link
-
-
 topMovieListURL = 'https://www.imdb.com/chart/top?ref_=nv_mv_250'
 topMovieListHtml = requests.get(topMovieListURL)
 bs = BeautifulSoup(topMovieListHtml.text, 'lxml')
