@@ -46,7 +46,7 @@ term_set = set()
 with open(movieFilteredJSONFile, 'r') as f:
     movies = json.load(f)
 
-for movie in movies[0:10]:
+for movie in movies:
     moviesNameList.append(movie['name'])
     moviesWordDict[movie['name']] = movie['storyline'].split()
     moviestfDict[movie['name']] = term_freq(movie['storyline'].split())
@@ -58,13 +58,21 @@ for movie in movies[0:10]:
 idf_dict = inv_doc_freq(term_set, moviesWordDict)
 term_list = list(term_set)
 tf_idf = pd.DataFrame(columns=moviesNameList, index=term_list)
+count1 = 0
+print(len(term_set))
 
 for (movie, wordList) in moviesWordDict.items():
+    count1 += 1
+    print('count1=', count1)
+    count2 = 0
     for w in term_set:
+        count2 += 1
+        print('count2=', count2)
         if w in wordList:
             tf_idf.loc[w, movie] = moviestfDict[movie][w] * idf_dict[w]
         else:
             tf_idf.loc[w, movie] = 0
+
 writer = ExcelWriter('tfidf_result.xlsx')
 tf_idf.to_excel(writer, 'tfidf')
 writer.save()
