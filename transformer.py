@@ -21,11 +21,51 @@ def term_freq(word_list):
     return word_dict
 
 
+def inv_doc_freq(term_set, doc_name2word_list):
+    doc_num = len(doc_name2word_list)
+    idf_dict = {}
+    # term in all doc
+    for w in term_set:
+        doc_count = 0
+        # find the appear frenquency among all documents
+        for word_list in doc_name2word_list.values():
+            if w in word_list:
+                doc_count += 1
+        idf_dict[w] = math.log(doc_num / doc_count)
+    return idf_dict
+
+
 if platform.system() == 'Darwin':
     movieFilteredJSONFile = './movies_filtered.json'
 elif platform.system() == 'Windows':
     movieFilteredJSONFile = 'movies_filtered.json'
+moviesNameList = []
+moviesWordDict = {}
+moviestfDict = {}
+term_set = set()
 with open(movieFilteredJSONFile, 'r') as f:
     movies = json.load(f)
-    for movie in movies[0:1]:
-        print(term_freq(movie['storyline'].split()))
+
+for movie in movies[0:10]:
+    moviesNameList.append(movie['name'])
+    moviesWordDict[movie['name']] = movie['storyline'].split()
+    moviestfDict[movie['name']] = term_freq(movie['storyline'].split())
+    # retuen union
+    term_set = term_set | set(movie['storyline'].split())
+    # print(moviesWordDict[movie['name']], moviestfDict[movie['name']])
+    # print(term_set)
+    # print(moviesNameList)
+idf_dict = inv_doc_freq(term_set, moviesWordDict)
+term_list = list(term_set)
+tf_idf = pd.DataFrame(columns=moviesNameList, index=term_list)
+
+for (movie, wordList) in moviesWordDict.items():
+    for w in term_set:
+        if w in wordList:
+            tf_idf.loc[w, movie] = moviestfDict[movie][w] * idf_dict[w]
+        else:
+            tf_idf.loc[w, movie] = 0
+writer = ExcelWriter('tfidf_result.xlsx')
+tf_idf.to_excel(writer, 'tfidf')
+writer.save()
+print('File Output Success')
