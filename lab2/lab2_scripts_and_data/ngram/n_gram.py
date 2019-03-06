@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import os
 import re
 from nltk.corpus import stopwords
 from nltk.collocations import BigramCollocationFinder
@@ -22,12 +23,15 @@ def bigram_word_feats(words, score_fn=BigramAssocMeasures.chi_sq, n=50):
 
 
 if __name__ == '__main__':
-    with open('n_gram_input_text.txt', 'r') as f:
+    rootdir = os.path.dirname(os.path.abspath(__file__))
+    with open(os.path.join(rootdir, './n_gram_input_text.txt'), 'r') as f:
         content = ''
         for line in f.readlines():
             content += line
         content = content.strip()
+        print(content)
         content = re.sub('[^A-Za-z\s]', ' ', content)
+        print(content)
         content = content.lower()
         word_list = content.split()
         filtered_list = stopword_filtered(word_list)

@@ -5,6 +5,10 @@ import os
 import math
 import pandas as pd
 from pandas import ExcelWriter
+import nltk
+from nltk.corpus import stopwords
+from nltk.collocations import BigramCollocationFinder
+from nltk.metrics import BigramAssocMeasures
 
 
 def term_freq(word_list):
@@ -35,6 +39,12 @@ def inv_doc_freq(term_set, doc_name2word_list):
     return idf_dict
 
 
+def bigram_word_feats(words, score_fn=BigramAssocMeasures.chi_sq, n=50):
+    bigram_finder = BigramCollocationFinder.from_words(words)
+    bigrams = bigram_finder.nbest(score_fn, n)
+    return bigrams
+
+
 if platform.system() == 'Darwin':
     movieFilteredJSONFile = './movies_filtered.json'
 elif platform.system() == 'Windows':
@@ -46,15 +56,19 @@ term_set = set()
 with open(movieFilteredJSONFile, 'r') as f:
     movies = json.load(f)
 
-for movie in movies:
+for movie in movies[0:1]:
+    bigramWordList = bigram_word_feats(
+        movie['storyline'].split())
+    # TODO: 需要理解一下如何计算n-gram的tf-idf
     moviesNameList.append(movie['name'])
-    moviesWordDict[movie['name']] = movie['storyline'].split()
-    moviestfDict[movie['name']] = term_freq(movie['storyline'].split())
+    moviesWordDict[movie['name']] = bigramWordList
+    moviestfDict[movie['name']] = term_freq(bigramWordList)
     # retuen union
-    term_set = term_set | set(movie['storyline'].split())
-    # print(moviesWordDict[movie['name']], moviestfDict[movie['name']])
-    # print(term_set)
-    # print(moviesNameList)
+    term_set = term_set | set(bigramWordList)
+    print(moviesWordDict[movie['name']], '\n',
+          '------', '\n', moviestfDict[movie['name']])
+    print(term_set)
+    print(moviesNameList)
 idf_dict = inv_doc_freq(term_set, moviesWordDict)
 term_list = list(term_set)
 tf_idf = pd.DataFrame(columns=moviesNameList, index=term_list)
