@@ -19,7 +19,7 @@ def term_freq(word_list):
         else:
             word_dict[w] = 1
     word_num = float(sum(word_dict.values()))
-    print(word_num)
+    # print(word_num)
     for w in word_dict.keys():
         word_dict[w] /= word_num
     return word_dict
@@ -56,32 +56,34 @@ term_set = set()
 with open(movieFilteredJSONFile, 'r') as f:
     movies = json.load(f)
 
-for movie in movies[0:1]:
+for movie in movies:
     bigramWordList = bigram_word_feats(
         movie['storyline'].split())
-    # TODO: 需要理解一下如何计算n-gram的tf-idf
+
     moviesNameList.append(movie['name'])
     moviesWordDict[movie['name']] = bigramWordList
     moviestfDict[movie['name']] = term_freq(bigramWordList)
     # retuen union
     term_set = term_set | set(bigramWordList)
-    print(moviesWordDict[movie['name']], '\n',
-          '------', '\n', moviestfDict[movie['name']])
-    print(term_set)
-    print(moviesNameList)
+    # print(moviesWordDict[movie['name']], '\n',
+    #       '------', '\n', moviestfDict[movie['name']])
+
 idf_dict = inv_doc_freq(term_set, moviesWordDict)
 term_list = list(term_set)
 tf_idf = pd.DataFrame(columns=moviesNameList, index=term_list)
 count1 = 0
+print(term_set)
+print(moviesNameList)
 print(len(term_set))
 
 for (movie, wordList) in moviesWordDict.items():
-    count1 += 1
-    print('count1=', count1)
-    count2 = 0
+    # count1 += 1
+    # print('count1=', count1)
+    # count2 = 0
+    print(movie, wordList)
     for w in term_set:
-        count2 += 1
-        print('count2=', count2)
+        # count2 += 1
+        # print('count2=', count2)
         if w in wordList:
             tf_idf.loc[w, movie] = moviestfDict[movie][w] * idf_dict[w]
         else:
