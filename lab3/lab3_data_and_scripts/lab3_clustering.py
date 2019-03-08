@@ -6,12 +6,16 @@ from sklearn import metrics
 from sklearn.cluster import KMeans
 import numpy as np
 # Load some categories from the training set
-categories = ['alt.atheism', 'talk.religion.misc', 'comp.graphics', 'sci.space']
+categories = ['alt.atheism', 'talk.religion.misc',
+              'comp.graphics', 'sci.space']
 dataset = fetch_20newsgroups(subset='all', categories=categories)
 labels = dataset.target
+print(labels)
 k = len(np.unique(labels))
+print(type(dataset.data))
 vectorizer = TfidfVectorizer(max_df=0.5, min_df=2, stop_words='english')
 X = vectorizer.fit_transform(dataset.data)
+print(type(dataset.data[0]), dataset.data[0])
 
 # perform clustering
 km = KMeans(n_clusters=k, max_iter=100, n_init=1)

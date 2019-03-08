@@ -1,95 +1,54 @@
-import re
-import platform
+from __future__ import print_function
 import json
-import os
-import math
-import pandas as pd
-from pandas import ExcelWriter
-import nltk
-from nltk.corpus import stopwords
-from nltk.collocations import BigramCollocationFinder
-from nltk.metrics import BigramAssocMeasures
-
-
-def term_freq(word_list):
-    word_dict = {}
-    for w in word_list:
-        if w in word_dict:
-            word_dict[w] += 1
-        else:
-            word_dict[w] = 1
-    word_num = float(sum(word_dict.values()))
-    # print(word_num)
-    for w in word_dict.keys():
-        word_dict[w] /= word_num
-    return word_dict
-
-
-def inv_doc_freq(term_set, doc_name2word_list):
-    doc_num = len(doc_name2word_list)
-    idf_dict = {}
-    # term in all doc
-    for w in term_set:
-        doc_count = 0
-        # find the appear frenquency among all documents
-        for word_list in doc_name2word_list.values():
-            if w in word_list:
-                doc_count += 1
-        idf_dict[w] = math.log(doc_num / doc_count)
-    return idf_dict
-
-
-def bigram_word_feats(words, score_fn=BigramAssocMeasures.chi_sq, n=50):
-    bigram_finder = BigramCollocationFinder.from_words(words)
-    bigrams = bigram_finder.nbest(score_fn, n)
-    return bigrams
-
+import numpy as np
+import platform
+from sklearn.feature_extraction.text import CountVectorizer
+from sklearn.feature_extraction.text import TfidfTransformer
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn import metrics
+from sklearn.metrics import pairwise_distances
+from sklearn.cluster import KMeans
+from wordcloud import WordCloud
+import matplotlib.pyplot as plt
 
 if platform.system() == 'Darwin':
     movieFilteredJSONFile = './movies_filtered.json'
 elif platform.system() == 'Windows':
     movieFilteredJSONFile = 'movies_filtered.json'
-moviesNameList = []
-moviesWordDict = {}
-moviestfDict = {}
-term_set = set()
+
 with open(movieFilteredJSONFile, 'r') as f:
     movies = json.load(f)
-
+storyLines = []
 for movie in movies:
-    bigramWordList = bigram_word_feats(
-        movie['storyline'].split())
+    storyLines.append(movie['storyline'])
+vectorizer = TfidfVectorizer()
+X = vectorizer.fit_transform(storyLines)
+ks = [10, 15, 20]
+score = 0
+k = 0
+for kCache in ks:
+    km = KMeans(n_clusters=kCache)
+    kmeans_model = km.fit(X)
+    km.fit_transform(X)
+    labels = kmeans_model.labels_
+    scoreCache = metrics.silhouette_score(X, labels, metric='euclidean')
+    if scoreCache > score:
+        score = scoreCache
+        k = kCache
+    print(score)
+    print(k)
+print('Top terms per cluster:')
+order_centroids = km.cluster_centers_.argsort()[:, ::-1]
+terms = vectorizer.get_feature_names()
+# WordCloudTextList = []
+for i in range(0, k):
+    print('\n Cluster %d: ' % i, end='')
+    wordList = []
+    for ind in order_centroids[i]:
+        print(' %s' % terms[ind], end='')
+        wordList.append(terms[ind])
 
-    moviesNameList.append(movie['name'])
-    moviesWordDict[movie['name']] = bigramWordList
-    moviestfDict[movie['name']] = term_freq(bigramWordList)
-    # retuen union
-    term_set = term_set | set(bigramWordList)
-    # print(moviesWordDict[movie['name']], '\n',
-    #       '------', '\n', moviestfDict[movie['name']])
-
-idf_dict = inv_doc_freq(term_set, moviesWordDict)
-term_list = list(term_set)
-tf_idf = pd.DataFrame(columns=moviesNameList, index=term_list)
-count1 = 0
-print(term_set)
-print(moviesNameList)
-print(len(term_set))
-
-for (movie, wordList) in moviesWordDict.items():
-    # count1 += 1
-    # print('count1=', count1)
-    # count2 = 0
-    print(movie, wordList)
-    for w in term_set:
-        # count2 += 1
-        # print('count2=', count2)
-        if w in wordList:
-            tf_idf.loc[w, movie] = moviestfDict[movie][w] * idf_dict[w]
-        else:
-            tf_idf.loc[w, movie] = 0
-
-writer = ExcelWriter('tfidf_result.xlsx')
-tf_idf.to_excel(writer, 'tfidf')
-writer.save()
-print('File Output Success')
+    wordcloud = WordCloud().generate(' '.join(wordList))
+    wordcloud.to_file('./wordcloud/cluster'+str(i+1)+'.png')
+    plt.imshow(wordcloud, interpolation='bilinear')
+    plt.axis('off')
