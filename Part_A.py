@@ -39,6 +39,7 @@ for index, movieLink in enumerate(movieListTable[0:100]):
     link = 'https://www.imdb.com' + movieLink.find('a')['href'] + '/'
     html = BeautifulSoup(requests.get(link).text, 'lxml')
     name = html.find('h1').text
+
     storyLine = html.find('div', {'id': 'titleStoryLine'}).find(
         'div', {'class': 'inline canwrap'}).find('span').text
     movie = {"name": name, "storyline": storyLine, "link": link}
@@ -97,6 +98,8 @@ for kCache in ks:
     km.fit_transform(X)
     labels = kmeans_model.labels_
     scoreCache = metrics.silhouette_score(X, labels, metric='euclidean')
+    print('The k Value is %d, and the corresponding silhouette coefficient is %f.' %
+          (kCache, scoreCache))
     if scoreCache > score:
         score = scoreCache
         k = kCache
@@ -106,7 +109,7 @@ terms = vectorizer.get_feature_names()
 for i in range(0, k):
     # print('\n Cluster %d: ' % i, end='')
     wordList = []
-    print('The transformer is generating %d wordcloud image.' % i)
+    print('The transformer is generating %d wordcloud image.' % (i+1))
     for ind in order_centroids[i]:
         # print(' %s' % terms[ind], end='')
         wordList.append(terms[ind])
