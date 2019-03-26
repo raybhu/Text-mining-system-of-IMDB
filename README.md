@@ -1,1 +1,1 @@
-# comp7630-assignment
+# Text mining of IMDB
